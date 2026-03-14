@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Simple Scan Web</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 20px; }
+
+    :root {
+      --green:  #00794c;
+      --blue:   #3b82f6;
+      --amber:  #ffb700;
+      --red:    #c0392b;
+    }
+
+    /* Dark theme (default) */
+    :root, [data-theme="dark"] {
+      --bg:     #111111;
+      --card:   #1a1a1a;
+      --text:   #e8e8e8;
+      --muted:  #777777;
+      --border: #e8e8e8;
+      --border-light: #333333;
+      --btn-border: #333;
+      --btn-shadow: #333;
+      --amber-border: #a07200;
+      --amber-shadow: #7a5700;
+      --green-border: #004d30;
+      --green-shadow: #003822;
+      --badge-bg: #000;
+      --badge-fg: #fff;
+      --badge-border: #555;
+      --btn-active: #222;
+      --lb-bg: rgba(0,0,0,.88);
+      --lb-ctrl-bg: #222;
+      --lb-ctrl-border: #555;
+      --lb-ctrl-hover: #333;
+      --lb-ctrl-active: #444;
+      --lb-img-border: #444;
+      --lb-label: #999;
+    }
+
+    /* Light theme */
+    [data-theme="light"] {
+      --bg:     #ffffff;
+      --card:   #f5f5f0;
+      --text:   #111111;
+      --muted:  #666666;
+      --border: #111111;
+      --border-light: #cccccc;
+      --btn-border: #000;
+      --btn-shadow: #bbb;
+      --amber-border: #000;
+      --amber-shadow: #bbb;
+      --green-border: #000;
+      --green-shadow: #bbb;
+      --badge-bg: #fff;
+      --badge-fg: #000;
+      --badge-border: #999;
+      --btn-active: #e0e0d8;
+      --lb-bg: rgba(0,0,0,.75);
+      --lb-ctrl-bg: #fff;
+      --lb-ctrl-border: #999;
+      --lb-ctrl-hover: #eee;
+      --lb-ctrl-active: #ddd;
+      --lb-img-border: #999;
+      --lb-label: #ccc;
+    }
+
+    /* Auto: follow system preference */
+    @media (prefers-color-scheme: light) {
+      [data-theme="auto"] {
+        --bg:     #ffffff;
+        --card:   #f5f5f0;
+        --text:   #111111;
+        --muted:  #666666;
+        --border: #111111;
+        --border-light: #cccccc;
+        --btn-border: #000;
+        --btn-shadow: #bbb;
+        --amber-border: #000;
+        --amber-shadow: #bbb;
+        --green-border: #000;
+        --green-shadow: #bbb;
+        --badge-bg: #fff;
+        --badge-fg: #000;
+        --badge-border: #999;
+        --btn-active: #e0e0d8;
+        --lb-bg: rgba(0,0,0,.75);
+        --lb-ctrl-bg: #fff;
+        --lb-ctrl-border: #999;
+        --lb-ctrl-hover: #eee;
+        --lb-ctrl-active: #ddd;
+        --lb-img-border: #999;
+        --lb-label: #ccc;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      transition: background .2s, color .2s;
+      font-family: 'Berkeley Mono', 'SF Mono', ui-monospace, 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+      font-size: 16px;
+      line-height: 1.4;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 14px;
+      gap: 12px;
+    }
+
+    .header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      width: 100%; max-width: 380px;
+      padding-bottom: 5px;
+      border-bottom: 2px dotted var(--amber);
+    }
+    h1 {
+      font-size: .85rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    #theme-toggle {
+      background: none; border: 1px solid var(--border-light);
+      color: var(--muted); font-family: inherit; font-size: .55rem;
+      padding: 2px 6px; cursor: pointer; text-transform: uppercase;
+      letter-spacing: .04em; width: auto;
+    }
+    #theme-toggle:hover { color: var(--text); border-color: var(--border); background: none; }
+
+    .buttons {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      max-width: 380px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 7px 16px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: .8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text);
+      background: var(--bg);
+      box-shadow: 2px 2px 0 var(--border-light);
+      transition: box-shadow .1s, transform .1s;
+    }
+    button:hover { background: var(--card); }
+    button:active {
+      background: var(--btn-active);
+      box-shadow: 1px 1px 0 var(--border-light);
+      transform: translate(2px, 2px);
+    }
+    button:disabled { opacity: .3; cursor: not-allowed; }
+
+    #btn-scan {
+      background: var(--amber); color: #000; border-color: var(--amber-border);
+      box-shadow: 2px 2px 0 var(--amber-shadow); flex: 1;
+    }
+    #btn-scan:hover { background: #e5a500; }
+    #btn-scan:active { box-shadow: none; transform: translate(2px, 2px); }
+    #session-actions {
+      display: flex; gap: 6px;
+    }
+    #btn-finish {
+      background: var(--green); color: #fff; border-color: var(--green-border);
+      box-shadow: 2px 2px 0 var(--green-shadow);
+    }
+    #btn-finish:hover { background: #006b42; }
+    #btn-finish:active { box-shadow: none; transform: translate(2px, 2px); }
+    #btn-cancel {
+      border-color: var(--border-light); color: var(--muted); font-size: .75rem;
+      box-shadow: 2px 2px 0 var(--border-light);
+    }
+    #btn-cancel:hover { border-color: var(--muted); }
+    #btn-cancel:active { box-shadow: 1px 1px 0 var(--border-light); transform: translate(1px, 1px); }
+
+    .spinner {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(128,128,128,.3);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: var(--text); color: var(--bg);
+      padding: 6px 14px;
+      font-size: .75rem; font-weight: 500;
+      opacity: 0; transition: opacity .3s;
+      pointer-events: none; white-space: nowrap;
+      border: 1px solid var(--border);
+    }
+    #toast.show { opacity: 1; }
+
+    #preview {
+      width: 100%; max-width: 380px;
+      display: none;
+    }
+    #preview-label {
+      font-size: .65rem; color: var(--muted); margin-bottom: 4px;
+      text-transform: uppercase; letter-spacing: .08em; font-weight: 700;
+    }
+    #preview-strip {
+      display: flex; gap: 6px;
+      overflow-x: auto; padding: 2px 0 6px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    #preview-strip::-webkit-scrollbar { height: 3px; }
+    #preview-strip::-webkit-scrollbar-thumb { background: var(--border-light); }
+    .thumb {
+      flex: 0 0 auto;
+      height: 100px; width: auto;
+      border: 1px solid var(--border-light);
+      scroll-snap-align: start;
+      object-fit: contain;
+      background: var(--card);
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .thumb:active { opacity: .7; }
+    .thumb:hover  { border-color: var(--blue); }
+
+    #scanner-bar {
+      width: 100%; max-width: 380px;
+      display: flex; gap: 4px; align-items: center;
+      position: relative;
+    }
+    #scanner-toggle {
+      flex: 1;
+      background: var(--bg); color: var(--text); border: 1px solid var(--border-light);
+      padding: 5px 8px; font-size: .75rem; font-family: inherit;
+      cursor: pointer; text-align: left;
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 30px;
+    }
+    #scanner-toggle:hover { background: var(--card); }
+    #scanner-toggle .chevron {
+      color: var(--muted); font-size: .6rem; flex-shrink: 0; margin-left: 6px;
+      transition: transform .2s;
+    }
+    #scanner-bar.open #scanner-toggle .chevron { transform: rotate(180deg); }
+    #scanner-toggle-label {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #scanner-dropdown {
+      display: none; position: absolute; top: 100%; left: 0; right: 36px;
+      margin-top: 2px; background: var(--bg); border: 1px solid var(--border);
+      overflow: hidden; z-index: 50;
+      max-height: 220px; overflow-y: auto;
+    }
+    #scanner-bar.open #scanner-dropdown { display: block; }
+    .scanner-opt {
+      padding: 6px 8px; cursor: pointer;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .scanner-opt:last-child { border-bottom: none; }
+    .scanner-opt:hover, .scanner-opt.active { background: var(--card); }
+    .scanner-opt-name {
+      font-size: .75rem; color: var(--text); font-weight: 600;
+    }
+    .scanner-opt-detail {
+      font-size: .6rem; color: var(--muted); margin-top: 1px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #scanner-refresh {
+      background: var(--bg); color: var(--text); border: 1px solid var(--border-light);
+      width: 30px; height: 30px;
+      font-size: .85rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .3s;
+      padding: 0; flex-shrink: 0;
+    }
+    #scanner-refresh:active { transform: rotate(180deg); }
+    #scanner-refresh.spinning { animation: spin .7s linear infinite; }
+
+    #lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--lb-bg);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      gap: 12px;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox-img {
+      max-width: 100%; max-height: calc(100dvh - 100px);
+      object-fit: contain;
+      border: 1px solid var(--lb-img-border);
+    }
+    #lightbox-bar {
+      display: flex; align-items: center; gap: 10px;
+    }
+    #lightbox-label {
+      font-size: .75rem; font-weight: 600; color: var(--lb-label);
+      font-family: inherit;
+    }
+    .lb-btn {
+      background: var(--lb-ctrl-bg); color: var(--text);
+      border: 1px solid var(--lb-ctrl-border);
+      width: 34px; height: 34px;
+      font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit;
+    }
+    .lb-btn:hover { background: var(--lb-ctrl-hover); }
+    .lb-btn:active { background: var(--lb-ctrl-active); }
+
+    #history { width: 100%; max-width: 380px; display: none; }
+    .section-label {
+      font-size: .65rem; color: var(--muted); margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: .08em; font-weight: 700;
+      border-bottom: 1px dotted var(--amber);
+      padding-bottom: 3px;
+    }
+    .history-grid {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .history-card {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      position: relative;
+    }
+    .history-card .thumb {
+      height: 100px; width: auto;
+      border: 1px solid var(--border-light);
+      object-fit: contain; background: var(--card);
+      cursor: pointer; transition: border-color .15s;
+    }
+    .history-card .thumb:hover { border-color: var(--blue); }
+    .history-card .thumb:active { opacity: .7; }
+    .history-card-label {
+      font-size: .5rem; color: var(--muted); text-align: center;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 80px; line-height: 1.2;
+    }
+    .history-badge {
+      position: absolute; bottom: .95rem; right: .35rem;
+      background: var(--badge-bg); color: var(--badge-fg); border: 1px solid var(--badge-border);
+      width: 1.1rem; height: 1.1rem; font-size: .55rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .history-card-dl {
+      position: absolute; top: .3rem; right: .35rem;
+      background: var(--badge-bg); color: var(--badge-fg); border: 1px solid var(--badge-border);
+      width: 1.1rem; height: 1.1rem; font-size: .55rem; padding: 0;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .15s;
+    }
+    .history-card:hover .history-card-dl,
+    .history-card:active .history-card-dl { opacity: 1; }
+    @media (hover: none) { .history-card-dl { opacity: .8; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Simple Scan Web</h1>
+    <button id="theme-toggle" onclick="cycleTheme()">Auto</button>
+  </div>
+
+  <div id="scanner-bar">
+    <div id="scanner-toggle" onclick="toggleDropdown()">
+      <span id="scanner-toggle-label">Searching for scanners…</span>
+      <span class="chevron">&#9660;</span>
+    </div>
+    <div id="scanner-dropdown"></div>
+    <button id="scanner-refresh" onclick="refreshScanners()">&#8635;</button>
+  </div>
+
+  <div id="preview">
+    <div id="preview-label">Scanned pages</div>
+    <div id="preview-strip"></div>
+  </div>
+
+  <div class="buttons">
+    <button id="btn-scan" onclick="doScan(scanAction())">
+      <span id="btn-scan-label">Scan</span>
+      <div class="spinner" id="spin-scan"></div>
+    </button>
+    <div id="session-actions" style="display:none">
+      <button id="btn-finish" onclick="doScan('finish')">Save&#8594;</button>
+      <button id="btn-cancel" onclick="doScan('cancel')">Discard</button>
+    </div>
+  </div>
+
+  <div id="history"></div>
+
+  <div id="lightbox" onclick="closeLightbox(event)">
+    <div id="lightbox-bar">
+      <button class="lb-btn" onclick="prevPage(event)">&lsaquo;</button>
+      <span id="lightbox-label">Page 1</span>
+      <button class="lb-btn" onclick="nextPage(event)">&rsaquo;</button>
+      <button class="lb-btn" id="lb-dl" onclick="lbDownload(event)" style="display:none"><svg style="flex-shrink:0" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v10m0 0l-4-4m4 4l4-4"/><line x1="6" y1="19" x2="18" y2="19"/></svg></button>
+      <button class="lb-btn" onclick="closeLightbox(event)">&times;</button>
+    </div>
+    <img id="lightbox-img" src="" alt="Preview">
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // ── Theme ──────────────────────────────────────────────────────────────
+  const themes = ['auto', 'dark', 'light'];
+  const labels = { auto: 'Auto', dark: 'Dark', light: 'Light' };
+  let themeIdx = themes.indexOf(localStorage.getItem('theme') || 'auto');
+  if (themeIdx < 0) themeIdx = 0;
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', themes[themeIdx]);
+    $('theme-toggle').textContent = labels[themes[themeIdx]];
+    localStorage.setItem('theme', themes[themeIdx]);
+  }
+
+  function cycleTheme() {
+    themeIdx = (themeIdx + 1) % themes.length;
+    applyTheme();
+  }
+
+  applyTheme();
+
+  // ── Scanner selector ───────────────────────────────────────────────────
+  let scannerDevices = [];
+
+  function toggleDropdown() {
+    $('scanner-bar').classList.toggle('open');
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', e => {
+    if (!$('scanner-bar').contains(e.target)) {
+      $('scanner-bar').classList.remove('open');
+    }
+  });
+
+  async function selectScanner(device) {
+    $('scanner-bar').classList.remove('open');
+    try {
+      await fetch('/scanners/select?device=' + encodeURIComponent(device), { method: 'POST' });
+      await loadScanners();
+    } catch(e) {}
+  }
+
+  async function loadScanners() {
+    try {
+      const r = await fetch('/scanners');
+      const data = await r.json();
+      scannerDevices = data.devices;
+      const dd = $('scanner-dropdown');
+      const label = $('scanner-toggle-label');
+
+      if (!data.devices.length) {
+        label.textContent = 'No scanners found';
+        dd.innerHTML = '';
+        return;
+      }
+
+      // Update toggle label with selected scanner name
+      const sel = data.devices.find(d => d.device === data.selected);
+      label.textContent = sel ? sel.name : 'Select a scanner';
+
+      // Build dropdown options
+      dd.innerHTML = '';
+      data.devices.forEach(d => {
+        const opt = document.createElement('div');
+        opt.className = 'scanner-opt' + (d.device === data.selected ? ' active' : '');
+        opt.onclick = () => selectScanner(d.device);
+
+        const name = document.createElement('div');
+        name.className = 'scanner-opt-name';
+        name.textContent = d.name;
+
+        const detail = document.createElement('div');
+        detail.className = 'scanner-opt-detail';
+        detail.textContent = d.device;
+
+        opt.append(name, detail);
+        dd.appendChild(opt);
+      });
+    } catch(e) {}
+  }
+
+  async function refreshScanners() {
+    const btn = $('scanner-refresh');
+    btn.classList.add('spinning');
+    try {
+      await fetch('/scanners/refresh', { method: 'POST' });
+      await loadScanners();
+    } catch(e) {}
+    btn.classList.remove('spinning');
+  }
+
+  loadScanners();
+
+  // ── Status ────────────────────────────────────────────────────────────
+  async function fetchStatus() {
+    const r = await fetch('/scan/status');
+    return r.json();
+  }
+
+  let lastPageCount = 0;
+  let lbTotal = 0;
+  let lbCurrent = 0;
+  let lbBaseUrl = '/scan/page';
+  let lbPdfUrl = null;
+  let lbName = '';
+
+  function openLightbox(pageNum, baseUrl, total, pdfUrl, name) {
+    if (baseUrl !== undefined) lbBaseUrl = baseUrl;
+    if (total !== undefined)   lbTotal = total;
+    if (pdfUrl !== undefined)  lbPdfUrl = pdfUrl;
+    if (name !== undefined)    lbName = name;
+    lbCurrent = pageNum;
+    $('lightbox-img').src = `${lbBaseUrl}/${pageNum}/full?t=${Date.now()}`;
+    const pageInfo = `Page ${pageNum} / ${lbTotal}`;
+    $('lightbox-label').textContent = lbName ? `${lbName} — ${pageInfo}` : pageInfo;
+    $('lb-dl').style.display = lbPdfUrl ? 'flex' : 'none';
+    $('lightbox').classList.add('open');
+  }
+
+  function lbDownload(e) {
+    e.stopPropagation();
+    if (lbPdfUrl) window.location.href = lbPdfUrl;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (!$('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') $('lightbox').classList.remove('open');
+    else if (e.key === 'ArrowLeft' && lbCurrent > 1) openLightbox(lbCurrent - 1);
+    else if (e.key === 'ArrowRight' && lbCurrent < lbTotal) openLightbox(lbCurrent + 1);
+  });
+
+  function closeLightbox(e) {
+    if (e.target === $('lightbox') || e.currentTarget.classList.contains('lb-btn')) {
+      e.stopPropagation();
+      $('lightbox').classList.remove('open');
+    }
+  }
+
+  function prevPage(e) {
+    e.stopPropagation();
+    if (lbCurrent > 1) openLightbox(lbCurrent - 1);
+  }
+
+  function nextPage(e) {
+    e.stopPropagation();
+    if (lbCurrent < lbTotal) openLightbox(lbCurrent + 1);
+  }
+
+  function renderThumbs(count) {
+    const strip = $('preview-strip');
+    const preview = $('preview');
+
+    if (count === 0) {
+      preview.style.display = 'none'; strip.innerHTML = ''; lastPageCount = 0;
+      return;
+    }
+
+    preview.style.display = 'block';
+
+    for (let i = lastPageCount + 1; i <= count; i++) {
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      img.src = `/scan/page/${i}?t=${Date.now()}`;
+      img.alt = `Page ${i}`;
+      const pg = i;
+      img.onclick = () => openLightbox(pg, '/scan/page', count, null, '');
+      strip.appendChild(img);
+    }
+    lastPageCount = count;
+
+    if (strip.lastChild) strip.lastChild.scrollIntoView({ behavior: 'smooth', inline: 'end' });
+  }
+
+  // ── History ──────────────────────────────────────────────────────────────
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function renderHistory() {
+    try {
+      const r = await fetch('/scan/history');
+      const items = await r.json();
+      const el = $('history');
+
+      if (!items.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+      el.style.display = 'block';
+      el.innerHTML = '<div class="section-label">Recent scans</div>';
+
+      const grid = document.createElement('div');
+      grid.className = 'history-grid';
+
+      items.forEach(h => {
+        const sid = encodeURIComponent(h.id);
+        const total = h.page_count;
+        const card = document.createElement('div');
+        card.className = 'history-card';
+
+        const img = document.createElement('img');
+        img.className = 'thumb';
+        img.src = `/scan/history/${sid}/page/1`;
+        img.alt = h.pdf;
+        const fname = h.pdf.replace(/\.pdf$/i, '');
+        img.onclick = () => openLightbox(1, `/scan/history/${sid}/page`, total, `/scan/history/${sid}/pdf`, fname);
+
+        if (total > 1) {
+          const badge = document.createElement('div');
+          badge.className = 'history-badge';
+          badge.textContent = total;
+          card.appendChild(badge);
+        }
+
+        const dl = document.createElement('button');
+        dl.className = 'history-card-dl';
+        dl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v10m0 0l-4-4m4 4l4-4"/><line x1="6" y1="19" x2="18" y2="19"/></svg>';
+        dl.onclick = (e) => { e.stopPropagation(); window.location.href = `/scan/history/${sid}/pdf`; };
+
+        const label = document.createElement('div');
+        label.className = 'history-card-label';
+        label.textContent = h.pdf.replace(/\.pdf$/i, '').replace(/^scan_/, '');
+
+        card.append(img, dl, label);
+        grid.appendChild(card);
+      });
+
+      el.appendChild(grid);
+    } catch(e) { console.warn('History load failed', e); }
+  }
+
+  function scanAction() {
+    return session_active ? 'append' : 'start';
+  }
+
+  let session_active = false;
+
+  function setUI(state) {
+    const active   = state.active;
+    const pages    = state.pages;
+    const scanning = state.scanning;
+    session_active = active;
+
+    // Main scan button
+    $('btn-scan-label').textContent = active ? 'Scan+' : 'Scan';
+    $('btn-scan').disabled = scanning;
+    $('spin-scan').style.display = scanning ? 'block' : 'none';
+
+    // Session actions (save + discard)
+    $('session-actions').style.display = active && !scanning ? 'flex' : 'none';
+    $('btn-finish').disabled = !active || pages === 0 || scanning;
+    $('btn-cancel').disabled = !active || scanning;
+
+    if (!active) { renderThumbs(0); } else { renderThumbs(pages); }
+  }
+
+  function toast(msg, duration = 3000) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), duration);
+  }
+
+  async function doScan(action) {
+    // Optimistically lock UI
+    $('btn-scan').disabled = true;
+    $('btn-finish').disabled = true;
+    $('btn-cancel').disabled = true;
+    $('spin-scan').style.display = 'block';
+
+    try {
+      const r   = await fetch(`/scan/${action}`, { method: 'POST' });
+      const data = await r.json();
+
+      if (!r.ok) {
+        toast(data.detail || 'Error');
+      } else {
+        toast(data.message || 'Done');
+        if (action === 'finish' || action === 'cancel') renderHistory();
+      }
+    } catch (e) {
+      toast('Network error');
+    }
+
+    try {
+      const state = await fetchStatus();
+      setUI(state);
+    } catch(e) {
+      // Re-enable buttons so user isn't stuck
+      $('btn-scan').disabled = false;
+      $('btn-finish').disabled = false;
+      $('btn-cancel').disabled = false;
+      $('spin-scan').style.display = 'none';
+    }
+  }
+
+  async function poll() {
+    try {
+      const state = await fetchStatus();
+      setUI(state);
+    } catch(e) {}
+    setTimeout(poll, 5000);
+  }
+
+  poll();
+  renderHistory();
+</script>
+</body>
+</html>

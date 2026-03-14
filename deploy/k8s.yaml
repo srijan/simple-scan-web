@@ -1,0 +1,124 @@
+---
+# ConfigMap — tune these to match your environment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-scan-web-config
+  namespace: default
+data:
+  RESOLUTION: "300"
+  SCAN_MODE: "Color"
+  CONSUME_DIR: "/consume"
+  TEMP_DIR: "/tmp/simple-scan-web"
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-scan-web
+  namespace: default
+  labels:
+    app: simple-scan-web
+spec:
+  replicas: 1          # must stay 1 — session state is in-memory
+  strategy:
+    type: Recreate     # avoid two pods fighting over the scanner
+  selector:
+    matchLabels:
+      app: simple-scan-web
+  template:
+    metadata:
+      labels:
+        app: simple-scan-web
+    spec:
+      containers:
+        - name: simple-scan-web
+          image: YOUR_REGISTRY/simple-scan-web:latest   # replace with your image
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: simple-scan-web-config
+          volumeMounts:
+            - name: consume
+              mountPath: /consume
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /scan/status
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /scan/status
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+      volumes:
+        - name: consume
+          # Option A: NFS share
+          nfs:
+            server: YOUR_NAS_OR_SERVER_IP    # replace with your server IP
+            path: /path/to/output            # replace with your output path
+
+          # Option B: hostPath
+          # hostPath:
+          #   path: /path/to/output
+          #   type: Directory
+
+          # Option C: PVC
+          # persistentVolumeClaim:
+          #   claimName: scan-output-pvc
+
+---
+# Service — ClusterIP + optional LoadBalancer for phone access
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-scan-web
+  namespace: default
+spec:
+  selector:
+    app: simple-scan-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  # Change to LoadBalancer if you want a direct LAN IP (e.g. via MetalLB)
+  # type: LoadBalancer
+  type: ClusterIP
+
+---
+# Optional: Ingress (if you have Traefik or Nginx ingress on k3s)
+# Uncomment and adjust host/ingressClassName to suit your setup.
+#
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: simple-scan-web
+#   namespace: default
+#   annotations:
+#     traefik.ingress.kubernetes.io/router.entrypoints: web
+# spec:
+#   ingressClassName: traefik
+#   rules:
+#     - host: scan.home.local
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: simple-scan-web
+#                 port:
+#                   number: 80

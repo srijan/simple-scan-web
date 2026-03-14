@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: simple-scan-web
-          image: YOUR_REGISTRY/simple-scan-web:latest   # replace with your image
+          image: ghcr.io/srijan/simple-sane-web:latest   # pushed by GitHub Actions
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

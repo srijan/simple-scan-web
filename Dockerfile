@@ -1,22 +1,24 @@
 FROM python:3.12-slim
 
-# Install SANE, airscan backend, and image tools
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sane-utils \
     libsane-common \
     sane-airscan \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /tmp/simple-scan-web /consume
 
 WORKDIR /app
 
-# Python deps
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ .
 
-# Temp dir and consume dir (override consume via env + volume mount)
-RUN mkdir -p /tmp/simple-scan-web /consume
+RUN useradd -r -s /usr/sbin/nologin app && chown -R app:app /app /consume /tmp/simple-scan-web
+USER app
 
 EXPOSE 8080
 

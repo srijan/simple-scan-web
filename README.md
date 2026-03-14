@@ -54,12 +54,23 @@ curl -X POST http://localhost:8080/scan/finish   # export PDF
 
 ## Quick start (Docker)
 
-```bash
-docker build -t simple-scan-web .
+Pre-built images are published to GHCR on every push to `main` and on version tags:
 
+```bash
 docker run -d \
   -p 8080:8080 \
   -e CONSUME_DIR=/consume \
+  -v /path/to/output:/consume \
+  --name simple-scan-web \
+  ghcr.io/srijan/simple-scan-web:latest
+```
+
+Or build locally:
+
+```bash
+docker build -t simple-scan-web .
+docker run -d \
+  -p 8080:8080 \
   -v /path/to/output:/consume \
   --name simple-scan-web \
   simple-scan-web
@@ -71,19 +82,12 @@ Scanners are discovered automatically via `scanimage -L`.
 
 ## Deploy on k3s
 
-1. Build and push your image:
-   ```bash
-   docker build -t your-registry/simple-scan-web:latest .
-   docker push your-registry/simple-scan-web:latest
-   ```
-
-2. Edit `deploy/k8s.yaml`:
-   - Set `image:` to your image path
+1. Edit `deploy/k8s.yaml`:
    - Configure the `consume` volume to point to your output directory
      (NFS, hostPath, or PVC)
    - Uncomment the Ingress block if you have Traefik/Nginx ingress
 
-3. Apply:
+2. Apply:
    ```bash
    kubectl apply -f deploy/k8s.yaml
    ```

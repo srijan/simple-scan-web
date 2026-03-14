@@ -15,6 +15,13 @@ or any HTTP client.
 - Session state persisted across restarts
 - OpenAPI docs at `/api-docs`
 
+## AI disclosure
+
+This project was built with significant AI assistance (Claude) at roughly
+**Level 3** on the [Shapiro vibe coding scale](https://www.danshapiro.com/blog/2026/01/the-five-levels-from-spicy-autocomplete-to-the-software-factory/)
+— architecture, UX decisions, and review were human-driven; implementation
+was primarily AI-generated.
+
 ## API
 
 All scanning operations are available as REST endpoints. The web UI is just
